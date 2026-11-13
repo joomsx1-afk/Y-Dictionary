@@ -1,9 +1,17 @@
 [project]
 name = "Y-Dictionary"
-version = "1.0.0"
-description = "British English Translator"
-dependencies = ["flet", "deep-translator"]
+version = "2.0.0"
+description = "AI British English Translator by Youssef"
+dependencies = ["flet", "deep-translator", "requests", "SpeechRecognition", "gTTS"]
 
 [tool.flet]
 org = "com.youssef"
 product = "Y Dictionary"
+
+[tool.flet.android]
+permissions = [
+    "android.permission.INTERNET",
+    "android.permission.RECORD_AUDIO",
+    "android.permission.CAMERA",
+    "android.permission.READ_EXTERNAL_STORAGE"
+]
