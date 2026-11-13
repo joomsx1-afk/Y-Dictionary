@@ -12,8 +12,7 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
     page.padding = 20
 
-    # --- 1. عناصر الواجهة الأساسية ---
-    title = ft.Text("Y Dictionary Pro 🇬🇧", size=26, weight=ft.FontWeight.BOLD, color="blue")
+    title = ft.Text("Y Dictionary Pro", size=26, weight=ft.FontWeight.BOLD, color="blue")
     status_text = ft.Text("", size=14, color="orange")
     word_input = ft.TextField(
         label="اكتب، تكلم، أو اختر صورة...",
@@ -25,25 +24,19 @@ def main(page: ft.Page):
     )
     result_text = ft.Text("", size=20, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
 
-    # --- 2. إعداد مشغل الصوت للنطق البريطاني ---
-    audio_player = ft.Audio(src="https://dummy.mp3", autoplay=False)
-    page.overlay.append(audio_player)
-
+    # --- 1. النطق الصوتي باللهجة البريطانية ---
     def speak_british(e):
         if result_text.value.strip() != "":
             status_text.value = "جاري تجهيز النطق البريطاني..."
             page.update()
             try:
-                # توليد صوت بلهجة المملكة المتحدة (co.uk)
                 tts = gTTS(text=result_text.value, lang='en', tld='co.uk')
-                audio_path = "british_voice.mp3"
+                audio_path = os.path.join(os.getcwd(), "british_voice.mp3")
                 tts.save(audio_path)
-                audio_player.src = audio_path
-                audio_player.update()
-                audio_player.play()
+                page.launch_url(f"file://{audio_path}")
                 status_text.value = ""
             except Exception as ex:
-                status_text.value = "حدث خطأ في تشغيل الصوت"
+                status_text.value = "تعذر تشغيل الصوت على هذا الجهاز"
             page.update()
 
     btn_speak = ft.IconButton(
@@ -55,7 +48,7 @@ def main(page: ft.Page):
         on_click=speak_british
     )
 
-    # --- 3. دوال الترجمة ---
+    # --- 2. دوال الترجمة ---
     def translate_to_gb(e):
         if word_input.value.strip() != "":
             status_text.value = "جاري الترجمة..."
@@ -87,14 +80,13 @@ def main(page: ft.Page):
                 result_text.color = "red"
             page.update()
 
-    # --- 4. ميزة التصوير واستخراج النص (OCR) ---
+    # --- 3. التصوير واستخراج النص من الصور (OCR) ---
     def on_image_picked(e: ft.FilePickerResultEvent):
-        if e.files:
+        if e.files and len(e.files) > 0:
             file_path = e.files[0].path
             status_text.value = "جاري قراءة النص من الصورة..."
             page.update()
             try:
-                # إرسال الصورة لمحرك OCR المجاني
                 with open(file_path, 'rb') as f:
                     response = requests.post(
                         'https://ocr.space',
@@ -105,22 +97,23 @@ def main(page: ft.Page):
                 extracted_text = data['ParsedResults'][0]['ParsedText']
                 if extracted_text.strip():
                     word_input.value = extracted_text.strip()
-                    status_text.value = "تم استخراج النص بنجاح! اضغط ترجمة."
+                    status_text.value = "تم استخراج النص! اضغط ترجمة."
                 else:
                     status_text.value = "لم يتم العثور على نص واضح في الصورة."
-            except:
+            except Exception as ex:
                 status_text.value = "فشل في قراءة الصورة، تأكد من الإنترنت."
             page.update()
 
     file_picker = ft.FilePicker(on_result=on_image_picked)
     page.overlay.append(file_picker)
 
-    # --- 5. ميزة الميكروفون وتحويل الصوت لنص ---
+    # --- 4. الميكروفون وتحويل الصوت لنص ---
     is_recording = False
     audio_rec = ft.AudioRecorder(
         audio_encoder=ft.AudioEncoder.WAV,
     )
     page.overlay.append(audio_rec)
+    wav_path = os.path.join(os.getcwd(), "voice_input.wav")
 
     def toggle_mic(e):
         nonlocal is_recording
@@ -129,7 +122,7 @@ def main(page: ft.Page):
             btn_mic.icon_color = "red"
             status_text.value = "جاري الاستماع... تحدث الآن ثم اضغط لإيقاف"
             page.update()
-            audio_rec.start_recording("voice_input.wav")
+            audio_rec.start_recording(wav_path)
         else:
             is_recording = False
             btn_mic.icon_color = "blue"
@@ -139,9 +132,8 @@ def main(page: ft.Page):
             
             try:
                 recognizer = sr.Recognizer()
-                with sr.AudioFile("voice_input.wav") as source:
+                with sr.AudioFile(wav_path) as source:
                     audio_data = recognizer.record(source)
-                    # التعرف على الكلام (يدعم العربية والإنجليزية)
                     text = recognizer.recognize_google(audio_data, language="ar-EG")
                     word_input.value = text
                     status_text.value = "تم تحويل الصوت بنجاح!"
@@ -149,7 +141,6 @@ def main(page: ft.Page):
                 status_text.value = "لم أتمكن من فهم الصوت، حاول مرة أخرى."
             page.update()
 
-    # أزرار الأدوات الذكية (كاميرا ومايك)
     btn_camera = ft.IconButton(
         icon=ft.Icons.CAMERA_ALT,
         icon_color="blue",
@@ -165,11 +156,9 @@ def main(page: ft.Page):
         on_click=toggle_mic
     )
 
-    # أزرار الترجمة
     btn_gb = ft.Button("إلى إنجليزي بريطاني", on_click=translate_to_gb, bgcolor="blue", color="white")
     btn_ar = ft.Button("إلى العربية", on_click=translate_to_ar, bgcolor="green", color="white")
 
-    # تجميع الشاشة
     page.add(
         title,
         ft.Row([btn_camera, btn_mic], alignment=ft.MainAxisAlignment.CENTER),
