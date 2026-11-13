@@ -1,8 +1,8 @@
 [project]
 name = "Y-Dictionary"
-version = "2.0.0"
+version = "2.1.0"
 description = "AI British English Translator by Youssef"
-dependencies = ["flet", "deep-translator", "requests", "SpeechRecognition", "gTTS"]
+dependencies = ["flet", "deep-translator", "requests", "SpeechRecognition", "standard-aifc", "gTTS"]
 
 [tool.flet]
 org = "com.youssef"
