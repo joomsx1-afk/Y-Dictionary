@@ -1,0 +1,9 @@
+[project]
+name = "Y-Dictionary"
+version = "1.0.0"
+description = "British English Translator"
+dependencies = ["flet", "deep-translator"]
+
+[tool.flet]
+org = "com.youssef"
+product = "Y Dictionary"
